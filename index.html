@@ -2,177 +2,221 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Frise Chronologique Interactive - Graine d'IA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frise Chronologique Interactive</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
-        h2 { text-align: center; color: #2c3e50; }
+        :root {
+            --navy: #0a1d44;
+            --teal: #2a7a7d;
+            --yellow: #ffde59;
+            --light-gray: #f0f2f5;
+        }
+
+        body { 
+            font-family: 'Arial Rounded MT Bold', 'Helvetica', sans-serif; 
+            background-color: var(--light-gray); 
+            margin: 0; padding: 20px;
+            color: var(--navy);
+        }
+
+        /* En-tête avec bouton jaune */
+        .container { max-width: 1200px; margin: 0 auto; }
         
-        /* Zone de la liste d'événements */
+        .header-section {
+            display: flex; align-items: flex-start; gap: 20px; margin-bottom: 40px;
+        }
+
+        .instruction-box {
+            background-color: var(--yellow);
+            padding: 15px; border-radius: 20px; width: 150px;
+            font-weight: bold; font-size: 14px; line-height: 1.4;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Cartes d'événements */
         #events-pool {
-            display: flex; flex-wrap: wrap; gap: 10px; padding: 20px;
-            background: #fff; border-radius: 8px; border: 2px dashed #bdc3c7;
-            min-height: 100px; margin-bottom: 30px;
+            display: flex; flex-wrap: wrap; gap: 15px; flex: 1;
+            min-height: 120px;
         }
 
         .event-card {
-            background: #3498db; color: white; padding: 8px 12px;
-            border-radius: 4px; cursor: grab; font-size: 14px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;
+            background: white; border-radius: 20px; padding: 10px;
+            width: 140px; height: 140px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; font-size: 13px; font-weight: 900;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            cursor: grab; transition: transform 0.2s;
+            border: 1px solid transparent;
         }
-        .event-card:active { cursor: grabbing; }
+        .event-card:hover { transform: scale(1.05); }
 
-        /* Structure de la frise */
-        .timeline-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 15px; margin-top: 20px;
+        /* La Frise et la Flèche */
+        .timeline-wrapper {
+            position: relative; margin-top: 100px; padding-bottom: 100px;
+            overflow-x: auto; white-space: nowrap; padding-left: 20px;
         }
+
+        .timeline-line {
+            position: absolute; bottom: 85px; left: 0; right: 40px;
+            height: 8px; background-color: var(--teal);
+        }
+        .timeline-line::after {
+            content: ''; position: absolute; right: -30px; top: -16px;
+            border-left: 40px solid var(--teal);
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+        }
+
+        .timeline-container { display: flex; gap: 40px; position: relative; z-index: 2; }
 
         .timeline-slot {
-            background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 8px;
-            padding: 10px; min-height: 80px; display: flex; flex-direction: column;
-            align-items: center; position: relative;
+            display: flex; flex-direction: column; align-items: center; width: 140px;
         }
 
-        .slot-date { font-weight: bold; margin-bottom: 10px; color: #7f8c8d; }
+        .drop-zone {
+            width: 140px; height: 140px; background: white;
+            border-radius: 20px; border: 2px solid transparent;
+            margin-bottom: 15px; display: flex; align-items: center; justify-content: center;
+        }
 
-        /* États de correction */
-        .correct { border-color: #2ecc71 !important; background-color: #e8f8f0 !important; }
-        .wrong { border-color: #e74c3c !important; background-color: #fdedec !important; }
+        .slot-date {
+            font-size: 24px; font-weight: 900; color: var(--navy);
+            position: relative; padding-top: 20px;
+        }
+        .slot-date::before {
+            content: ''; position: absolute; top: -15px; left: 50%;
+            width: 3px; height: 15px; background: var(--navy); transform: translateX(-50%);
+        }
+        .slot-date::after {
+            content: ''; position: absolute; top: -20px; left: 50%;
+            width: 10px; height: 10px; background: var(--navy);
+            border-radius: 50%; transform: translateX(-50%);
+        }
 
-        /* Boutons et Score */
-        .controls { text-align: center; margin-top: 40px; }
+        /* Feedback et Correction */
+        .correct { border: 4px solid #4caf50 !important; }
+        .wrong { border: 4px solid #f44336 !important; }
+
+        .controls { text-align: center; margin-top: 20px; }
         button {
-            padding: 12px 25px; font-size: 16px; border: none; border-radius: 5px;
-            cursor: pointer; transition: background 0.3s;
+            background-color: var(--navy); color: white; border: none;
+            padding: 15px 30px; border-radius: 30px; font-weight: bold;
+            cursor: pointer; font-size: 16px;
         }
-        #check-btn { background: #27ae60; color: white; }
-        #check-btn:hover { background: #219150; }
-        #result-msg { margin-top: 15px; font-weight: bold; font-size: 18px; }
+        #result-msg { margin-top: 20px; font-weight: bold; font-size: 20px; }
     </style>
 </head>
 <body>
 
-    <h2>L'Histoire de l'IA et de l'Informatique</h2>
-    <p style="text-align: center;">Glissez les événements sur les bonnes dates de la frise.</p>
-
-    <div id="events-pool" ondrop="dropToPool(event)" ondragover="allowDrop(event)"></div>
-
-    <div class="timeline-container" id="timeline"></div>
-
-    <div class="controls">
-        <button id="check-btn" onclick="checkAnswers()">Vérifier mes réponses</button>
-        <div id="result-msg"></div>
+<div class="container">
+    <div class="header-section">
+        <div class="instruction-box">Glissez les événements sur les bonnes dates de la frise.</div>
+        <div id="events-pool" ondrop="dropToPool(event)" ondragover="allowDrop(event)"></div>
     </div>
 
-    <script>
-        const data = [
-            { id: "e1", text: "La Pascaline", date: "1642" },
-            { id: "e2", text: "Descartes", date: "1685" },
-            { id: "e3", text: "Le canard de Vaucanson", date: "1734" },
-            { id: "e4", text: "Le turc mécanique", date: "1770" },
-            { id: "e5", text: "Le métier Jacquard", date: "1801" },
-            { id: "e6", text: "Ada Lovelace", date: "1842" },
-            { id: "e7", text: "La machine de Babbage", date: "1871" },
-            { id: "e8", text: "Alan Turing - Computing Machinery", date: "1950" },
-            { id: "e9", text: "Conférence de Dartmouth", date: "1956" },
-            { id: "e10", text: "Le perceptron - Rosenblat", date: "1957" },
-            { id: "e11", text: "Arpanet", date: "1969" },
-            { id: "e12", text: "Systèmes experts - MYCIN", date: "1970" },
-            { id: "e13", text: "Arrivée des PC en France", date: "1977" },
-            { id: "e14", text: "Internet", date: "1982" },
-            { id: "e15", text: "Le Web", date: "1990" },
-            { id: "e16", text: "Naissance de Nvidia", date: "1993" },
-            { id: "e17", text: "Naissance d'Amazon", date: "1994" },
-            { id: "e18", text: "Deep Blue vs Kasparov", date: "1996" },
-            { id: "e19", text: "Naissance de Google", date: "1998" },
-            { id: "e20", text: "Asimo (robot humanoïde)", date: "2000" }
-        ];
+    <div class="timeline-wrapper">
+        <div class="timeline-line"></div>
+        <div class="timeline-container" id="timeline"></div>
+    </div>
 
-        // Initialisation
-        function init() {
-            const pool = document.getElementById('events-pool');
-            const timeline = document.getElementById('timeline');
+    <div class="controls">
+        <button onclick="checkAnswers()">Vérifier mes réponses</button>
+        <div id="result-msg"></div>
+    </div>
+</div>
 
-            // Mélanger les données pour la liste
-            const shuffled = [...data].sort(() => Math.random() - 0.5);
+<script>
+    const data = [
+        { id: "e1", text: "La pascaline", date: "1642" },
+        { id: "e2", text: "Descartes", date: "1685" },
+        { id: "e3", text: "Le canard de Vaucanson", date: "1734" },
+        { id: "e4", text: "Le turc mécanique", date: "1770" },
+        { id: "e5", text: "Le métier Jacquard", date: "1801" },
+        { id: "e6", text: "Ada Lovelace", date: "1842" },
+        { id: "e7", text: "La machine de Babbage", date: "1871" },
+        { id: "e8", text: "Alan Turing - Computing Machinery", date: "1950" },
+        { id: "e9", text: "Conférence de Dartmouth", date: "1956" },
+        { id: "e10", text: "Le perceptron - Frank Rosenblat", date: "1957" },
+        { id: "e11", text: "Arpanet", date: "1969" },
+        { id: "e12", text: "Systèmes experts - MYCIN", date: "1970" },
+        { id: "e13", text: "Arrivée des PC Personnels", date: "1977" },
+        { id: "e14", text: "Internet", date: "1982" },
+        { id: "e15", text: "Le web", date: "1990" },
+        { id: "e16", text: "Naissance de Nvidia", date: "1993" },
+        { id: "e17", text: "Naissance d’Amazon", date: "1994" },
+        { id: "e18", text: "Deep Blue vs Kasparov", date: "1996" },
+        { id: "e19", text: "Naissance de Google", date: "1998" },
+        { id: "e20", text: "Asimo - premier robot humanoïde", date: "2000" }
+    ];
 
-            shuffled.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'event-card';
-                div.textContent = item.text;
-                div.id = item.id;
-                div.draggable = true;
-                div.ondragstart = drag;
-                pool.appendChild(div);
-            });
+    function init() {
+        const pool = document.getElementById('events-pool');
+        const timeline = document.getElementById('timeline');
+        const shuffled = [...data].sort(() => Math.random() - 0.5);
 
-            // Créer les cases de la frise (triées par date)
-            const sortedDates = data.map(d => d.date).sort((a,b) => a - b);
-            sortedDates.forEach(date => {
-                const slot = document.createElement('div');
-                slot.className = 'timeline-slot';
-                slot.dataset.date = date;
-                slot.ondrop = dropToSlot;
-                slot.ondragover = allowDrop;
-                slot.innerHTML = `<span class="slot-date">${date}</span>`;
-                timeline.appendChild(slot);
-            });
+        shuffled.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'event-card';
+            div.textContent = item.text;
+            div.id = item.id;
+            div.draggable = true;
+            div.ondragstart = drag;
+            pool.appendChild(div);
+        });
+
+        data.forEach(item => {
+            const slot = document.createElement('div');
+            slot.className = 'timeline-slot';
+            slot.innerHTML = `
+                <div class="drop-zone" data-date="${item.date}" ondrop="dropToSlot(event)" ondragover="allowDrop(event)"></div>
+                <div class="slot-date">${item.date}</div>
+            `;
+            timeline.appendChild(slot);
+        });
+    }
+
+    function allowDrop(ev) { ev.preventDefault(); }
+    function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+    function dropToSlot(ev) {
+        ev.preventDefault();
+        const dataId = ev.dataTransfer.getData("text");
+        const draggedElement = document.getElementById(dataId);
+        let target = ev.target;
+        while (!target.classList.contains('drop-zone')) { target = target.parentNode; }
+
+        if (target.children.length === 0) {
+            target.appendChild(draggedElement);
+            target.classList.remove('correct', 'wrong');
         }
+    }
 
-        function allowDrop(ev) { ev.preventDefault(); }
+    function dropToPool(ev) {
+        ev.preventDefault();
+        const dataId = ev.dataTransfer.getData("text");
+        const draggedElement = document.getElementById(dataId);
+        document.getElementById('events-pool').appendChild(draggedElement);
+        draggedElement.parentElement.classList.remove('correct', 'wrong');
+    }
 
-        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
-
-        function dropToSlot(ev) {
-            ev.preventDefault();
-            const dataId = ev.dataTransfer.getData("text");
-            const draggedElement = document.getElementById(dataId);
-            
-            // On cible la div .timeline-slot même si on lâche sur le texte
-            let target = ev.target;
-            while (!target.classList.contains('timeline-slot')) { target = target.parentNode; }
-
-            // Condition : un seul élément par case
-            if (target.getElementsByClassName('event-card').length === 0) {
-                target.appendChild(draggedElement);
-                target.classList.remove('correct', 'wrong'); // Reset style
-            }
-        }
-
-        function dropToPool(ev) {
-            ev.preventDefault();
-            const dataId = ev.dataTransfer.getData("text");
-            const draggedElement = document.getElementById(dataId);
-            document.getElementById('events-pool').appendChild(draggedElement);
-            // Reset style quand on remet dans la liste
-            draggedElement.parentNode.classList.remove('correct', 'wrong');
-        }
-
-        function checkAnswers() {
-            let score = 0;
-            const slots = document.querySelectorAll('.timeline-slot');
-            
-            slots.forEach(slot => {
-                const eventCard = slot.querySelector('.event-card');
-                const targetDate = slot.dataset.date;
-
-                if (eventCard) {
-                    const eventData = data.find(d => d.id === eventCard.id);
-                    if (eventData.date === targetDate) {
-                        slot.classList.add('correct');
-                        slot.classList.remove('wrong');
-                        score++;
-                    } else {
-                        slot.classList.add('wrong');
-                        slot.classList.remove('correct');
-                    }
+    function checkAnswers() {
+        let score = 0;
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            const card = zone.querySelector('.event-card');
+            if (card) {
+                const itemData = data.find(d => d.id === card.id);
+                if (itemData.date === zone.dataset.date) {
+                    zone.classList.add('correct');
+                    score++;
+                } else {
+                    zone.classList.add('wrong');
                 }
-            });
+            }
+        });
+        document.getElementById('result-msg').textContent = `Score : ${score} / ${data.length}`;
+    }
 
-            document.getElementById('result-msg').textContent = `Score : ${score} / ${data.length}`;
-        }
-
-        init();
-    </script>
+    init();
+</script>
 </body>
 </html>
