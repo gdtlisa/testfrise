@@ -51,20 +51,36 @@
         .event-card:hover { transform: scale(1.05); border-color: var(--teal); }
 
         /* Ajustement de la frise pour qu'elle soit très longue */
-        .timeline-wrapper {
-            position: relative; margin-top: 50px; padding: 40px 0 100px 0;
-            overflow-x: auto; /* Permet de scroller si l'écran est petit */
-        }
+        /* Le conteneur doit s'adapter à la largeur du contenu total */
+.timeline-wrapper {
+    position: relative; 
+    margin-top: 50px; 
+    padding: 40px 0 100px 0;
+    display: inline-block; /* Crucial pour que le conteneur s'étire avec les dates */
+    min-width: 100%;
+}
 
-        .timeline-line {
-            position: absolute; bottom: 135px; left: 0; width: calc(100% - 40px);
-            height: 10px; background-color: var(--teal); z-index: 1;
-        }
-        .timeline-line::after {
-            content: ''; position: absolute; right: -30px; top: -15px;
-            border-left: 40px solid var(--teal);
-            border-top: 20px solid transparent;
-            border-bottom: 20px solid transparent;
+/* La ligne s'ajuste maintenant à 100% de la largeur du contenu réel */
+.timeline-line {
+    position: absolute; 
+    bottom: 135px; 
+    left: 0; 
+    width: 100%; /* Elle prend toute la largeur du wrapper qui est étiré par les dates */
+    height: 10px; 
+    background-color: var(--teal); 
+    z-index: 1;
+}
+
+/* La pointe de la flèche */
+.timeline-line::after {
+    content: ''; 
+    position: absolute; 
+    right: -35px; /* Elle pointe après la fin de la ligne */
+    top: -15px;
+    border-left: 40px solid var(--teal);
+    border-top: 20px solid transparent;
+    border-bottom: 20px solid transparent;
+}
         }
 
         .timeline-container { 
