@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Frise Chronologique Interactive - Graine d'IA</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
+        h2 { text-align: center; color: #2c3e50; }
+        
+        /* Zone de la liste d'événements */
+        #events-pool {
+            display: flex; flex-wrap: wrap; gap: 10px; padding: 20px;
+            background: #fff; border-radius: 8px; border: 2px dashed #bdc3c7;
+            min-height: 100px; margin-bottom: 30px;
+        }
+
+        .event-card {
+            background: #3498db; color: white; padding: 8px 12px;
+            border-radius: 4px; cursor: grab; font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.2s;
+        }
+        .event-card:active { cursor: grabbing; }
+
+        /* Structure de la frise */
+        .timeline-container {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px; margin-top: 20px;
+        }
+
+        .timeline-slot {
+            background: #ecf0f1; border: 2px solid #bdc3c7; border-radius: 8px;
+            padding: 10px; min-height: 80px; display: flex; flex-direction: column;
+            align-items: center; position: relative;
+        }
+
+        .slot-date { font-weight: bold; margin-bottom: 10px; color: #7f8c8d; }
+
+        /* États de correction */
+        .correct { border-color: #2ecc71 !important; background-color: #e8f8f0 !important; }
+        .wrong { border-color: #e74c3c !important; background-color: #fdedec !important; }
+
+        /* Boutons et Score */
+        .controls { text-align: center; margin-top: 40px; }
+        button {
+            padding: 12px 25px; font-size: 16px; border: none; border-radius: 5px;
+            cursor: pointer; transition: background 0.3s;
+        }
+        #check-btn { background: #27ae60; color: white; }
+        #check-btn:hover { background: #219150; }
+        #result-msg { margin-top: 15px; font-weight: bold; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+    <h2>L'Histoire de l'IA et de l'Informatique</h2>
+    <p style="text-align: center;">Glissez les événements sur les bonnes dates de la frise.</p>
+
+    <div id="events-pool" ondrop="dropToPool(event)" ondragover="allowDrop(event)"></div>
+
+    <div class="timeline-container" id="timeline"></div>
+
+    <div class="controls">
+        <button id="check-btn" onclick="checkAnswers()">Vérifier mes réponses</button>
+        <div id="result-msg"></div>
+    </div>
+
+    <script>
+        const data = [
+            { id: "e1", text: "La Pascaline", date: "1642" },
+            { id: "e2", text: "Descartes", date: "1685" },
+            { id: "e3", text: "Le canard de Vaucanson", date: "1734" },
+            { id: "e4", text: "Le turc mécanique", date: "1770" },
+            { id: "e5", text: "Le métier Jacquard", date: "1801" },
+            { id: "e6", text: "Ada Lovelace", date: "1842" },
+            { id: "e7", text: "La machine de Babbage", date: "1871" },
+            { id: "e8", text: "Alan Turing - Computing Machinery", date: "1950" },
+            { id: "e9", text: "Conférence de Dartmouth", date: "1956" },
+            { id: "e10", text: "Le perceptron - Rosenblat", date: "1957" },
+            { id: "e11", text: "Arpanet", date: "1969" },
+            { id: "e12", text: "Systèmes experts - MYCIN", date: "1970" },
+            { id: "e13", text: "Arrivée des PC en France", date: "1977" },
+            { id: "e14", text: "Internet", date: "1982" },
+            { id: "e15", text: "Le Web", date: "1990" },
+            { id: "e16", text: "Naissance de Nvidia", date: "1993" },
+            { id: "e17", text: "Naissance d'Amazon", date: "1994" },
+            { id: "e18", text: "Deep Blue vs Kasparov", date: "1996" },
+            { id: "e19", text: "Naissance de Google", date: "1998" },
+            { id: "e20", text: "Asimo (robot humanoïde)", date: "2000" }
+        ];
+
+        // Initialisation
+        function init() {
+            const pool = document.getElementById('events-pool');
+            const timeline = document.getElementById('timeline');
+
+            // Mélanger les données pour la liste
+            const shuffled = [...data].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'event-card';
+                div.textContent = item.text;
+                div.id = item.id;
+                div.draggable = true;
+                div.ondragstart = drag;
+                pool.appendChild(div);
+            });
+
+            // Créer les cases de la frise (triées par date)
+            const sortedDates = data.map(d => d.date).sort((a,b) => a - b);
+            sortedDates.forEach(date => {
+                const slot = document.createElement('div');
+                slot.className = 'timeline-slot';
+                slot.dataset.date = date;
+                slot.ondrop = dropToSlot;
+                slot.ondragover = allowDrop;
+                slot.innerHTML = `<span class="slot-date">${date}</span>`;
+                timeline.appendChild(slot);
+            });
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); }
+
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+
+        function dropToSlot(ev) {
+            ev.preventDefault();
+            const dataId = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(dataId);
+            
+            // On cible la div .timeline-slot même si on lâche sur le texte
+            let target = ev.target;
+            while (!target.classList.contains('timeline-slot')) { target = target.parentNode; }
+
+            // Condition : un seul élément par case
+            if (target.getElementsByClassName('event-card').length === 0) {
+                target.appendChild(draggedElement);
+                target.classList.remove('correct', 'wrong'); // Reset style
+            }
+        }
+
+        function dropToPool(ev) {
+            ev.preventDefault();
+            const dataId = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(dataId);
+            document.getElementById('events-pool').appendChild(draggedElement);
+            // Reset style quand on remet dans la liste
+            draggedElement.parentNode.classList.remove('correct', 'wrong');
+        }
+
+        function checkAnswers() {
+            let score = 0;
+            const slots = document.querySelectorAll('.timeline-slot');
+            
+            slots.forEach(slot => {
+                const eventCard = slot.querySelector('.event-card');
+                const targetDate = slot.dataset.date;
+
+                if (eventCard) {
+                    const eventData = data.find(d => d.id === eventCard.id);
+                    if (eventData.date === targetDate) {
+                        slot.classList.add('correct');
+                        slot.classList.remove('wrong');
+                        score++;
+                    } else {
+                        slot.classList.add('wrong');
+                        slot.classList.remove('correct');
+                    }
+                }
+            });
+
+            document.getElementById('result-msg').textContent = `Score : ${score} / ${data.length}`;
+        }
+
+        init();
+    </script>
+</body>
+</html>
